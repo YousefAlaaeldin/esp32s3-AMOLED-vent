@@ -1,35 +1,59 @@
 #include <stdio.h>
+#include <math.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "bsp/esp32_s3_touch_amoled_1_75.h"
 #include "lvgl.h"
-#include "bsp/display.h"
+#include "lvgl_help.h"
 
+
+
+/* ============================================
+ * Main Application
+ * ============================================ */
 void app_main(void)
 {
 
-        
-    // 1. Start the display and LVGL. This initializes the LCD, touch, LVGL task.
+
+    /*
+
+    // 1. Start the display and LVGL
     lv_display_t *disp = bsp_display_start();
     if (disp == NULL) {
-    printf("ERROR: bsp_display_start() failed!\n");
-    while(1) vTaskDelay(1000);
-}
+        printf("ERROR: bsp_display_start() failed!\n");
+        while(1) vTaskDelay(1000);
+    }
 
-    // 2. Turn on the backlight (optional; brightness may be on by default).
+    // 2. Turn on the backlight
     bsp_display_backlight_on();
 
-    // 3. Create a simple LVGL label on the active screen.
-    //    bsp_display_lock() / unlock() are required because LVGL is not thread‑safe.
+    // 3. Create the thermostat UI (new design)
     bsp_display_lock(portMAX_DELAY);
-    
-    lv_obj_t *label = lv_label_create(lv_screen_active());
-    lv_label_set_text(label, "Hello, LVGL!");
-    lv_obj_center(label);
+    create_ui();
     bsp_display_unlock();
 
-    // 4. Keep the application alive (the LVGL task is running in the background).
+    // 4. Simulate temperature changes (for demo purposes)
     while (1) {
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        vTaskDelay(pdMS_TO_TICKS(5000));
+
+        // Use BSP mutex to safely update the state and UI
+        bsp_display_lock(portMAX_DELAY);
+
+        if (g_state.current_temp < g_state.target_temp) {
+            g_state.current_temp += 0.3f;
+            if (g_state.current_temp > g_state.target_temp) {
+                g_state.current_temp = g_state.target_temp;
+            }
+        } else if (g_state.current_temp > g_state.target_temp) {
+            g_state.current_temp -= 0.2f;
+            if (g_state.current_temp < g_state.target_temp) {
+                g_state.current_temp = g_state.target_temp;
+            }
+        }
+
+        update_ui();   // refresh the entire UI after state change
+        bsp_display_unlock();
     }
+    
+    */
 }
