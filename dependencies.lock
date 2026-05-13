@@ -1,4 +1,10 @@
 dependencies:
+  esp-sr:
+    dependencies: []
+    source:
+      path: D:\embedded projects\espidf projs\AMOLED-lib-fix\components\esp-sr
+      type: local
+    version: 2.4.4
   espressif/button:
     component_hash: d0afa32f0e50d60bc0c6fc23f7eea98adc6b02cfe70b590bc52c23c506745287
     dependencies:
@@ -13,6 +19,16 @@ dependencies:
       registry_url: https://components.espressif.com
       type: service
     version: 4.1.6
+  espressif/cjson:
+    component_hash: e788323270d90738662d66fffa910bfe1fba019bba087f01557e70c40485b469
+    dependencies:
+    - name: idf
+      require: private
+      version: '>=5.0'
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    version: 1.7.19~2
   espressif/cmake_utilities:
     component_hash: 351350613ceafba240b761b4ea991e0f231ac7a9f59a9ee901f751bddc0bb18f
     dependencies:
@@ -23,6 +39,26 @@ dependencies:
       registry_url: https://components.espressif.com
       type: service
     version: 0.5.3
+  espressif/dl_fft:
+    component_hash: ced3cf28cc70452b7859c06f4e5059215167254a2047e34c893d6f501ccd6ea2
+    dependencies:
+    - name: idf
+      require: private
+      version: '>=5.0'
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    version: 0.4.0
+  espressif/esp-dsp:
+    component_hash: 12e44db246517a627bc0fe2b255b8335410c0215c98bfba2df5a8e3edea839ef
+    dependencies:
+    - name: idf
+      require: private
+      version: '>=4.2'
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    version: 1.8.0
   espressif/esp_codec_dev:
     component_hash: 9293329ccb361f67c6e847ab8f693b2d9158b2e438eff583c28558c29cdf3dca
     dependencies:
@@ -311,6 +347,10 @@ dependencies:
       type: service
     version: 1.0.4
 direct_dependencies:
+- espressif/cjson
+- espressif/dl_fft
+- espressif/esp-dsp
+- espressif/esp-sr
 - espressif/esp_codec_dev
 - espressif/esp_io_expander_tca9554
 - espressif/esp_lcd_co5300
@@ -320,6 +360,6 @@ direct_dependencies:
 - idf
 - lvgl/lvgl
 - waveshare/esp_lcd_touch_cst9217
-manifest_hash: 2a1fa612b8b33bff26cb00d61c901660e08a4d88e6f18ea571057541ece55f52
+manifest_hash: 3c145e4a0c297f2f5591cd82a0e0a0a232b88a760c17c3fd13b69fee96b446f6
 target: esp32s3
 version: 2.0.0

@@ -39,8 +39,8 @@
 #define BSP_I2S_SCLK          (GPIO_NUM_9)
 #define BSP_I2S_MCLK          (GPIO_NUM_42)
 #define BSP_I2S_LCLK          (GPIO_NUM_45)
-#define BSP_I2S_DOUT          (GPIO_NUM_10)
-#define BSP_I2S_DSIN          (GPIO_NUM_8)
+#define BSP_I2S_DOUT          (GPIO_NUM_8)
+#define BSP_I2S_DSIN          (GPIO_NUM_10)
 #define BSP_POWER_AMP_IO      (GPIO_NUM_46)
 
 /* Display */
