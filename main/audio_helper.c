@@ -14,6 +14,8 @@
 
 #include "bsp/esp32_s3_touch_amoled_1_75.h"
 
+#include "esp_vad.h"
+
 static const char *TAG = "AUDIO_HELPER_MIC_TEST";
 
 /* =========================================================
@@ -28,6 +30,10 @@ static TaskHandle_t g_audio_task_handle = NULL;
 static bool g_audio_enabled = false;
 
 static esp_codec_dev_handle_t g_mic_handle = NULL;
+
+static bool g_vad_enabled = true;
+static float g_vad_confidence = 0.0f;
+static vad_handle_t g_vad_handle = NULL;
 
 /* =========================================================
  * MIC TEST CONFIG
@@ -60,6 +66,7 @@ static esp_codec_dev_handle_t g_mic_handle = NULL;
 #define MIC_READ_FRAMES       MONO_FRAME_SAMPLES
 #define MIC_READ_SAMPLES      (MIC_READ_FRAMES * HW_CHANNELS)
 #define MIC_READ_BYTES        (MIC_READ_SAMPLES * sizeof(int16_t))
+
 
 
 /* =========================================================
@@ -213,6 +220,9 @@ static void audio_processing_task(void *arg)
     int zero_read_count = 0;
     int error_read_count = 0;
     int good_read_count = 0;
+    int vad_speech_count = 0;
+    int vad_silence_count = 0;
+    bool vad_active = false;
 
     g_audio_state = AUDIO_STATE_LISTENING;
 
@@ -245,15 +255,71 @@ static void audio_processing_task(void *arg)
 
         stereo_to_mono_avg(stereo_buffer, mono_buffer, frame_count);
 
+        if (g_vad_enabled && g_vad_handle && frame_count == VAD_FRAME_SIZE) {
+        vad_state_t vad_result = vad_process(
+            g_vad_handle,
+            mono_buffer,
+            VAD_SAMPLE_RATE,
+            VAD_FRAME_MS
+        );
+
+        if (vad_result == VAD_SPEECH) {
+            vad_speech_count++;
+            vad_silence_count = 0;
+        } else {
+            vad_silence_count++;
+            vad_speech_count = 0;
+        }
+
+        /*
+        * Start speech only after a few consecutive speech frames.
+        */
+        if (!vad_active && vad_speech_count >= VAD_START_TRIGGER_FRAMES) {
+            vad_active = true;
+
+            g_vad_state = AUDIO_VAD_SPEECH;
+            g_audio_state = AUDIO_STATE_VOICE_DETECTED;
+            g_vad_confidence = 1.0f;
+
+            ESP_LOGI(TAG,
+                    ">>> VAD SPEECH START <<< speech_count=%d",
+                    vad_speech_count);
+        }
+
+        /*
+        * End speech only after several consecutive silence frames.
+        */
+        if (vad_active && vad_silence_count >= VAD_END_TRIGGER_FRAMES) {
+            vad_active = false;
+
+            g_vad_state = AUDIO_VAD_SILENCE;
+            g_audio_state = AUDIO_STATE_LISTENING;
+            g_vad_confidence = 0.0f;
+
+            ESP_LOGI(TAG,
+                    "<<< VAD SPEECH END >>> silence_count=%d",
+                    vad_silence_count);
+        }
+
+        /*
+        * Keep global state active during the hangover period.
+        */
+        if (vad_active) {
+            g_vad_state = AUDIO_VAD_SPEECH;
+            g_audio_state = AUDIO_STATE_VOICE_DETECTED;
+            g_vad_confidence = 1.0f;
+        }
+    }
+
         /*
          * Print every successful read for first few reads,
          * 
          */
-        good_read_count++;
+        //good_read_count++;
 
-        if (good_read_count <= 50 || good_read_count % 50 == 0) {
-            print_mono_audio_stats(mono_buffer, samples_read, loop_count, bytes_read);
-        }
+        //if (good_read_count <= 50 || good_read_count % 50 == 0) {
+        //    print_mono_audio_stats(mono_buffer, frame_count, loop_count, bytes_read);
+        //}
 
         /*
          * Small delay only to reduce log spam.
@@ -377,6 +443,15 @@ esp_err_t audio_init(void)
         ESP_LOGI(TAG, "Mic input unmuted");
     }
 
+    g_vad_handle = vad_create(VAD_MODE_3);
+    if (!g_vad_handle) {
+        ESP_LOGE(TAG, "Failed to create VAD");
+        g_audio_state = AUDIO_STATE_ERROR;
+        return ESP_FAIL;
+    }
+
+    ESP_LOGI(TAG, "VAD initialized: mode 3, %d Hz, %d ms", HW_SAMPLE_RATE, VAD_FRAME_MS);
+
     /*
      * Stabilization delay.
      */
@@ -463,6 +538,11 @@ esp_err_t audio_deinit(void)
     memset(&g_kws_result, 0, sizeof(g_kws_result));
     g_vad_state = AUDIO_VAD_SILENCE;
     g_audio_state = AUDIO_STATE_IDLE;
+
+    if (g_vad_handle) {
+    vad_destroy(g_vad_handle);
+    g_vad_handle = NULL;
+}
 
     ESP_LOGI(TAG, "Mic-only audio test deinitialized");
     return ESP_OK;

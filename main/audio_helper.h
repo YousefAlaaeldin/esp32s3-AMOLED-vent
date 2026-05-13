@@ -14,12 +14,15 @@
 #define VAD_FRAME_SIZE        480      // 30 ms mono @ 16 kHz
 #define VAD_FRAME_MS          30
 
+#define VAD_START_TRIGGER_FRAMES    2
+#define VAD_END_TRIGGER_FRAMES      15
+
 /* Hardware audio interface (ES7210 + I2S) */
-#define HW_SAMPLE_RATE        22050
+#define HW_SAMPLE_RATE        16000
 #define HW_CHANNELS           2
 #define HW_BIT_DEPTH          16
 
-#define MONO_FRAME_SAMPLES    512
+#define MONO_FRAME_SAMPLES    VAD_FRAME_SIZE       // 30 ms of mono audio at 16 kHz
 
 #define AUDIO_TASK_STACK_SIZE 8192
 #define AUDIO_TASK_PRIORITY   1
