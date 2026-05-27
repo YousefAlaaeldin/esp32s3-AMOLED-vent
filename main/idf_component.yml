@@ -15,4 +15,4 @@ dependencies:
   #   # All dependencies of `main` are public by default.
   #   public: true
   espressif/usb: '*'
-  espressif/esp-sr: '*'
+  espressif/esp-sr: '2.4.4'
